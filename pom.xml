@@ -74,12 +74,28 @@
 	</dependencies>
 
 	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
+    <plugins>
+        <!-- Maven Compiler Plugin -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.8.1</version> <!-- Update the version here -->
+            <configuration>
+                <!-- Add any configuration parameters if needed -->
+            </configuration>
+        </plugin>
 
-</project>
+        <!-- Maven Jar Plugin -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.1.1</version> <!-- Update the version here -->
+            <configuration>
+                <!-- Add any configuration parameters if needed -->
+            </configuration>
+        </plugin>
+
+        <!-- Other plugins in your build -->
+    </plugins>
+</build>
+</project>	
