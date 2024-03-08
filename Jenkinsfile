@@ -1,85 +1,48 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.1.4.RELEASE</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
-	<groupId>com.coding.exercise</groupId>
-	<artifactId>bank-app</artifactId>
-	<version>1.0.0</version>
-	<name>BankApp</name>
-	<description>Bank App Spring Boot Project</description>
+node{
+    
+    def tag, dockerHubUser, containerName, httpPort = ""
+    
+    stage('Prepare Environment'){
+        echo 'Initialize Environment'
+        tag="3.0"
+	withCredentials([usernamePassword(credentialsId: 'dockerHubAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
+		dockerHubUser="$dockerUser"
+        }
+	containerName="bankingapp"
+	httpPort="8989"
+    }
+    
+    stage('Code Checkout'){
+        try{
+            checkout scm
+        }
+        catch(Exception e){
+            echo 'Exception occured in Git Code Checkout Stage'
+            currentBuild.result = "FAILURE"
+        }
+    }
+    
+    stage('Maven Build'){
+        sh "mvn clean package"        
+    }
+    
+    stage('Docker Image Build'){
+        echo 'Creating Docker image'
+        sh "docker build -t $dockerHubUser/$containerName:$tag --pull --no-cache ."
+    }  
+	
+    stage('Publishing Image to DockerHub'){
+        echo 'Pushing the docker image to DockerHub'
+        withCredentials([usernamePassword(credentialsId: 'dockerHubAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
+		sh "docker login -u $dockerUser -p $dockerPassword"
+		sh "docker push $dockerUser/$containerName:$tag"
+		echo "Image push complete"
+        } 
+    }    
+	
+	stage('Ansible Playbook Execution'){
+		sh "ansible-playbook -i inventory.yaml kubernetesDeploy.yaml -e httpPort=$httpPort -e containerName=$containerName -e dockerImageTag=$dockerHubUser/$containerName:$tag"
+	}
+}
 
-	<properties>
-		<java.version>1.8</java.version>
-	</properties>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger2</artifactId>
-			<version>2.9.2</version>
-		</dependency>
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger-ui</artifactId>
-			<version>2.9.2</version>
-		</dependency>		
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
-
-</project>
